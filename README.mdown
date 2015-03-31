@@ -426,6 +426,26 @@ Scheme matches your aggregate target name, change the `xcrun xcodebuild` line to
 xcrun xcodebuild ONLY_ACTIVE_ARCH=NO -workspace "${PROJECT_DIR}/${PROJECT_NAME}.xcworkspace" -scheme "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${SF_OTHER_PLATFORM}${SF_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" OBJROOT="${OBJROOT}" BUILD_ROOT="${BUILD_ROOT}" SYMROOT="${SYMROOT}" $ACTION
 ```
 
+**Note:** If you plan on developing the framework as a dependent project for a project that also uses cocoapods, it is good to use the `target` selector to avoid duplicate symbols.  Also ensure that the Pod project is also built with `ONLY_ACTIVE_ARCH=NO`
+
+```bash
+source 'https://github.com/CocoaPods/Specs.git'
+
+platform :ios, '7.0'
+target 'Serenity' do
+    pod AFNetworking
+end
+
+# since this is a universal framework, ensure ONLY_ACTIVE_ARCH is set to NO for pod project
+post_install do |installer_representation|
+    installer_representation.project.targets.each do |target|
+        target.build_configurations.each do |config|
+            config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+        end
+    end
+end
+```
+
 ### Step 4: Build and Verify
 
 You now have everything set up to build a distributable .framework to third-party developers. Try
@@ -599,6 +619,9 @@ Xcode and drop it in your application's frameworks folder. This will add a refer
 framework's xcodeproj folder. 
 
 ![](https://github.com/jverkoey/iOS-Framework/raw/master/gfx/dependentapp.png)
+
+**Note:** If using Cocoapods do this recursively for cocoapod dependencies.
+
 
 ### Step 2: Make the Framework Static Library Target a Dependency
 
